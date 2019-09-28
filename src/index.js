@@ -2,12 +2,14 @@ const $app = document.getElementById('app');
 const $observe = document.getElementById('observe');
 const API = 'https://rickandmortyapi.com/api/character/';
 let next_fetch = localStorage;
+next_fetch.setItem('next_fetch', 'start');
 
 const getData = api => {
   fetch(api)
     .then(response => response.json())
     .then(response => {
       next_fetch.setItem('next_fetch', response.info.next);
+      
       const characters = response.results;
       let output = characters.map(character => {
         return `
@@ -21,22 +23,37 @@ const getData = api => {
       newItem.classList.add('Items');
       newItem.innerHTML = output;
       $app.appendChild(newItem);
+      if(next_fetch.getItem('next_fetch') == ''){
+        killObserver();
+      }
     })
     .catch(error => console.log(error));
 }
 
-const loadData = () => {
-  if(next_fetch.getItem('next_fetch')) {
-    getData(next_fetch.getItem('next_fetch'));  
+async function loadData(){
+
+  if(next_fetch.getItem('next_fetch') != 'start') {
+    let response = await getData(next_fetch.getItem('next_fetch'));  
   }else{
-    getData(API);
+    let response= await getData(API);
   }
+}
+
+const killObserver = () => {
+  console.log('inicio');
+  let newItem = document.createElement('h3');
+  newItem.innerText = 'Ya no hay personajes...';
+  $app.appendChild(newItem);
+  intersectionObserver.disconnect();
+  console.log('fin');
+   
 }
 
 const intersectionObserver = new IntersectionObserver(entries => {
   if (entries[0].isIntersecting) {
     loadData();
   }
+
 }, {
   rootMargin: '0px 0px 100% 0px',
 });
